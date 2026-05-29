@@ -1,9 +1,10 @@
 name: dart-publish
 on:
-  push:
-    tags: ['dart/*']
+  release:
+    types: [published]
 jobs:
   publishing:
+    if: startsWith(github.ref, 'refs/tags/dart/')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,4 +21,5 @@ jobs:
         uses: k-paxian/dart-package-publisher@master
         with:
           credentialJson: \${{ secrets.PUBDEV_CREDENTIAL_JSON }}
+          relativePath: packages/dart
           force: true
