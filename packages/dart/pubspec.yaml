@@ -1,5 +1,5 @@
 name: quanttide_finance
-description: 量潮金融领域模型 - 核心实体与领域服务
+description: 量潮财务管理
 version: 0.1.0
 
 environment:
