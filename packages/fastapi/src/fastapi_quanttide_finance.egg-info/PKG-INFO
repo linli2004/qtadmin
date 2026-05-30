@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: fastapi-quanttide-finance
+Version: 0.1.0
+Summary: QuantTide Finance Toolkit — FastAPI backend for financial record normalization, classification, and statistics
+Requires-Python: >=3.12
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.34.0
+Requires-Dist: sqlalchemy>=2.0.36
+Requires-Dist: alembic>=1.14.0
+Requires-Dist: pydantic>=2.10.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: pytest-cov>=6.0.0; extra == "dev"
+Requires-Dist: httpx>=0.28.0; extra == "dev"
+Requires-Dist: ruff>=0.8.0; extra == "dev"
