@@ -17,6 +17,12 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from fastapi_quanttide_finance.database import Base
+from fastapi_quanttide_finance.models import (  # noqa: F401 — ensure models are loaded
+    source_record,
+    normalized_record,
+    record_link,
+    classification_result,
+)
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

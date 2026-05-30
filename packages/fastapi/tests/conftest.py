@@ -8,8 +8,19 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
 from fastapi_quanttide_finance.app import app
 from fastapi_quanttide_finance.database import get_db
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    """Enable foreign key enforcement for SQLite."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 TEST_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TEST_DB_PATH = TEST_DATA_DIR / "test.db"
