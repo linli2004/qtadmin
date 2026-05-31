@@ -49,8 +49,18 @@ class SourceRecordCreate(PydanticBase):
         return v
 
 
-class SourceRecordRead(SourceRecordCreate):
+class SourceRecordResponse(PydanticBase):
+    model_config = {"from_attributes": True}
+
     id: int
+    source_type: str
+    source_channel: Optional[str] = None
+    external_id: Optional[str] = None
+    raw_payload: Optional[dict] = None
+    raw_text: str = ""
+    evidence_refs: Optional[dict] = None
+    occurred_at: Optional[datetime] = None
+    ingestion_status: str = "pending"
     created_at: datetime
     updated_at: datetime
 

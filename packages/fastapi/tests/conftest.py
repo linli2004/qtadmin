@@ -1,3 +1,4 @@
+import tempfile
 from collections.abc import Generator
 from pathlib import Path
 
@@ -64,8 +65,18 @@ def db_session(db_engine) -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client(db_engine) -> Generator[TestClient, None, None]:
-    TestSessionLocal = sessionmaker(bind=db_engine)
+def client(alembic_config) -> Generator[TestClient, None, None]:
+    """Test client with per-test isolated SQLite DB."""
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    db_path = tmp.name
+    tmp.close()
+
+    # Run migrations on isolated database
+    alembic_config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
+    upgrade(alembic_config, "head")
+
+    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+    TestSessionLocal = sessionmaker(bind=engine)
 
     def override_get_db():
         db = TestSessionLocal()
@@ -77,4 +88,7 @@ def client(db_engine) -> Generator[TestClient, None, None]:
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
+
     app.dependency_overrides.clear()
+    engine.dispose()
+    Path(db_path).unlink(missing_ok=True)

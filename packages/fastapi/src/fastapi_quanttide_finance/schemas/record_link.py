@@ -20,6 +20,11 @@ class RecordLinkCreate(PydanticBase):
         return v
 
 
-class RecordLinkRead(RecordLinkCreate):
+class RecordLinkResponse(PydanticBase):
+    model_config = {"from_attributes": True}
+
     id: int
+    source_record_id: int
+    normalized_record_id: int
+    relation_type: str
     created_at: datetime

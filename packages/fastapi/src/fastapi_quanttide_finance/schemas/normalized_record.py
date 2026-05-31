@@ -57,8 +57,21 @@ class NormalizedRecordCreate(PydanticBase):
         return v
 
 
-class NormalizedRecordRead(NormalizedRecordCreate):
+class NormalizedRecordResponse(PydanticBase):
+    model_config = {"from_attributes": True}
+
     id: int
+    primary_source_id: Optional[int] = None
+    record_type: str
+    business_date: date
+    amount_cents: int = 0
+    currency: str = "CNY"
+    direction: str
+    department: Optional[str] = None
+    person: Optional[str] = None
+    counterparty: Optional[str] = None
+    description: str = ""
+    normalization_status: str = "draft"
     created_at: datetime
     updated_at: datetime
 

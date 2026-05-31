@@ -47,8 +47,19 @@ class ClassificationResultCreate(PydanticBase):
         return v
 
 
-class ClassificationResultRead(ClassificationResultCreate):
+class ClassificationResultResponse(PydanticBase):
+    model_config = {"from_attributes": True}
+
     id: int
+    normalized_record_id: int
+    taxonomy: str
+    category: str
+    tags: Optional[dict] = None
+    classifier_kind: str
+    confidence: Optional[float] = None
+    model_version: Optional[str] = None
+    review_status: str = "candidate"
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
 

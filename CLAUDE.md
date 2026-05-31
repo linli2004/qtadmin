@@ -4,6 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Test
 
+### FastAPI package (`packages/fastapi/`)
+
+Run all commands from `packages/fastapi/` — activate the venv first:
+
+```bash
+source .venv/bin/activate
+pip install -e ".[dev]"   # one-time setup
+python -m pytest          # run all tests
+python -m pytest tests/test_schemas.py -v  # run a specific test file
+```
+
+Test infrastructure (see `tests/conftest.py`):
+- File-based SQLite (`data/test.db`), rebuilt per session
+- Alembic migrations applied via `command.upgrade()` before tests
+- `PRAGMA foreign_keys=ON` enabled for FK integrity testing
+- `client` fixture overrides `get_db` dependency for TestClient
+
+Alembic migration workflow:
+
+```bash
+alembic revision --autogenerate -m "description"  # generate migration
+alembic upgrade head                                # apply
+alembic downgrade -1                                # rollback one step
+```
+
+FastAPI CI workflow is deferred (M0 backlog). Dart CI is in `.github/workflows/dart-check.yml`.
+
 ### Dart package (`packages/dart/`)
 
 ```bash
@@ -13,22 +40,14 @@ dart test                                    # Run all tests
 dart run build_runner build --delete-conflicting-outputs  # Regenerate freezed + json_serializable
 ```
 
-Dart CI is defined in `.github/workflows/dart-check.yml` — runs `pub get → analyze → test` on push/PR touching `packages/dart/**`. Publishing is triggered by GitHub releases with tag prefix `dart/` (see `dart-publish.yml`).
-
-### FastAPI package (`packages/fastapi/`)
-
-Not yet implemented. When it exists, will use pytest, SQLAlchemy, and Alembic. No CI workflow exists yet.
-
 ## Project Status
 
-This is a monorepo with two packages:
-
-| Package | Status | Purpose |
+| Package | Status | Content |
 |---|---|---|
 | `packages/dart` | Published `^0.1.1` | `Journal` / `JournalEntry` / `JournalEntryLine` — optional accounting layer |
-| `packages/fastapi` | Planned (not yet created) | `SourceRecord` / `NormalizedRecord` / `ClassificationResult` — main normalization & statistics backend |
+| `packages/fastapi` | M2 complete (0.1.0) | `SourceRecord` / `NormalizedRecord` / `RecordLink` / `ClassificationResult` — core models + schemas + CsvRowNormalizer + ManualNormalizer + normalize routes + GET endpoints (57 tests) |
 
-**Current implementation is incomplete.** The Dart package only covers the optional downstream accounting layer (`Journal` → `JournalEntry` → `JournalEntryLine`), not the core data pipeline. The FastAPI core is still to be built. See `doc/architecture.md` and `ROADMAP.md`.
+See `doc/architecture.md` and `ROADMAP.md` for the full plan. Current phase: M3 (Classification Service).
 
 ## Architecture
 
@@ -41,21 +60,33 @@ SourceRecord → NormalizedRecord → ClassificationResult → Statistics
 ```
 
 - `RecordLink` is the association layer between `SourceRecord` and `NormalizedRecord` (many-to-many), not a linear processing node
-- `ClassificationResult` is an additive dimension, not a fact layer — classification data lives only in `ClassificationResult`, never written back to `NormalizedRecord`
+- `ClassificationResult` is an additive dimension — data lives only in `ClassificationResult`, never written back to `NormalizedRecord`
 - Statistics are based on `NormalizedRecord`; unclassified records can still enter aggregation/trend/detail queries
 
-### FastAPI Package Structure (planned)
+### FastAPI Package Structure
 
 ```
 packages/fastapi/
-├── src/fastapi_quanttide_finance/
-│   ├── models/        # SQLAlchemy ORM models
-│   ├── schemas/       # Pydantic request/response schemas
-│   ├── services/      # Business logic (normalization, classification, statistics, posting)
-│   ├── routers/       # HTTP endpoints
-│   └── database.py    # DB connection + Alembic config
+├── pyproject.toml
+├── alembic.ini                              # Alembic configuration
+├── src/
+│   ├── alembic/                             # Migration scripts
+│   │   ├── env.py
+│   │   └── versions/
+│   └── fastapi_quanttide_finance/
+│       ├── app.py                           # FastAPI application + /health
+│       ├── database.py                      # SQLAlchemy engine + Base + get_db
+│       ├── models/                          # ORM models
+│       ├── schemas/                         # Pydantic Create/Read/Update schemas
+│       ├── services/                        # Normalizer interface + CsvRowNormalizer + ManualNormalizer
+│       └── routers/                         # SourceRecord CRUD + normalize endpoint
 ├── tests/
-└── examples/provider/
+│   ├── conftest.py                          # Test fixtures (SQLite + Alembic)
+│   ├── test_health.py                       # Health check
+│   ├── test_database.py                     # DB connectivity
+│   ├── test_models.py                       # ORM integration tests
+│   └── test_schemas.py                      # Pydantic validation tests
+└── data/                                    # SQLite DB files (gitignored)
 ```
 
 ### Layer Stack
@@ -64,39 +95,59 @@ packages/fastapi/
 Routers (HTTP endpoints) → Services (business logic) → Schemas (Pydantic) → Models (SQLAlchemy ORM)
 ```
 
+## Schema Validation Patterns
+
+All write paths go through Pydantic schemas — ORM models are never instantiated directly from raw user input.
+
+**Enum validation** via `field_validator` (not DB-level enum, for SQLite compatibility):
+
+```python
+@field_validator("source_type")
+@classmethod
+def validate_source_type(cls, v: str) -> str:
+    allowed = {"image", "chat", "form", "csv_row", "bank_tx", "api", "manual", "other"}
+    if v not in allowed:
+        raise ValueError(...)
+    return v
+```
+
+**Overflow handling** strategy per `doc/entities.md`:
+- `raw_text` > 65535 chars → **reject** (ValidationError, 422)
+- `description` > 1000 chars → **truncate** silently
+- `amount_cents` → `Field(ge=0)`, direction expressed by `outflow`/`inflow`
+
 ## Key Conventions
 
-- **IDs**: Target `int` for all entities. Current Dart models use `String` — migration to `int` is planned in a future breaking release.
-- **Amounts**: Use `int` with unit "分" (cents/fen), not `double`. Note: current Dart `JournalEntryLine.amount` is `double` — this is known tech debt that will be fixed when Dart models are synced (M6 in ROADMAP).
-- **Raw data preservation**: `raw_payload`, `raw_text`, `evidence_refs` keep original content; no irreversible trimming before storage.
-- **Code generation (Dart)**: Models use `freezed` + `json_serializable`. Run `build_runner` after editing model classes.
-- **Statistics API**: Unified "dimension + metrics + filter" pattern (not hardcoded `by_department` or `by_expense_type` endpoints).
-- **Desensitization**: Applied at data egress only (before sending to external AI), never stored. Uses type-token replacement (`[AMOUNT]`, `[ID_CARD]`, etc.).
+- **IDs**: `int` for all entities. Current Dart models still use `String` — migration planned in M6.
+- **Amounts**: `int` with unit "分" (cents). Current Dart `JournalEntryLine.amount` is still `double` — known tech debt for M6.
+- **Raw data preservation**: `raw_payload`, `raw_text`, `evidence_refs` store original content; no irreversible trimming before storage.
+- **Code generation (Dart)**: Models use `freezed` + `json_serializable`. Run `build_runner` after editing.
+- **Statistics API**: Unified "dimension + metrics + filter" pattern (not hardcoded endpoints).
+- **Desensitization**: Applied at data egress only (before external AI), never stored. Type-token replacement (`[AMOUNT]`, `[ID_CARD]`, etc.).
 - **Classification review flow**: `candidate → accepted/rejected`. Only `accepted` results participate in statistics.
 
 ## Key Documentation
 
 | File | Content |
 |---|---|
-| `ROADMAP.md` | Exploration phase plan with 6 milestones (M1-M6) and validation gates |
+| `ROADMAP.md` | Exploration phase plan with milestones and validation gates |
 | `doc/architecture.md` | System architecture, entity relationships, package structure |
-| `doc/entities.md` | Full entity field definitions for `SourceRecord`, `NormalizedRecord`, `RecordLink`, `ClassificationResult` |
+| `doc/entities.md` | **Single source of truth** for field defaults, constraints, enum values, truncation rules |
 | `doc/services.md` | Normalizer interface, registration pattern, built-in normalizer list |
 | `doc/api.md` | REST API endpoints and statistics design |
-| `doc/security.md` | Data desensitization, classification security, taxonomy validation, sandbox testing |
+| `doc/security.md` | Data desensitization, classification security, taxonomy validation |
 
-## Development Path (per ROADMAP)
+## Milestones (per ROADMAP)
 
-The current exploration phase (56 days) builds the standardization backbone in **`packages/fastapi`**:
-
-| Milestone | Focus | Key Deliverables |
-|---|---|---|
-| M1 | Day 14 | ORM models + Pydantic schemas + DB migration |
-| M2 | Day 28 | Normalizer interface + `CsvRowNormalizer` + `ManualNormalizer` |
-| M3 | Day 35 | Hardcoded taxonomy + classification API + review flow |
-| M4 | Day 42 | Aggregate/group/trend/drill-down statistics API |
-| M5 | Day 49 | Desensitization + audit logging + taxonomy output validation |
-| M6 | Day 56 | Dart model sync (`id` → `int`, `amount` → `int`, `normalizedRecordId` field) |
+| Phase | Deliverables |
+|---|---|
+| **M0** ✅ Done | Project scaffolding, Alembic, health check, test fixtures, doc updates |
+| **M1** ✅ Done | 4 ORM models + 4 Pydantic schemas + Alembic migration (30 tests) |
+| **M2** ✅ Done | Normalizer interface + registration + `CsvRowNormalizer` + `ManualNormalizer` + normalize + list/get routes (57 tests) |
+| **M3** | Hardcoded taxonomy + classification API + review flow |
+| **M4** | Aggregate/group/trend/drill-down statistics API |
+| **M5** | Desensitization + audit logging + taxonomy validation |
+| **M6** | Dart model sync (`id` → `int`, `amount` → `int`, `normalizedRecordId`) |
 
 ## Existing Dart Models
 
@@ -105,4 +156,4 @@ The current exploration phase (56 days) builds the standardization backbone in *
 - `JournalEntryLine` — debit/credit line (id, type, amount, description, createdAt)
 - `LineType` — enum: `debit`, `credit`
 
-All use `freezed` for immutability and `json_serializable` for JSON. Tests check `toJson/fromJson` roundtrip and `copyWith`. Run `dart run build_runner build --delete-conflicting-outputs` after any model change.
+All use `freezed` + `json_serializable`. Tests verify `toJson/fromJson` roundtrip and `copyWith`.

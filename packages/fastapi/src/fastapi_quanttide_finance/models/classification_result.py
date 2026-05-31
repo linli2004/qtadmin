@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy.dialects.sqlite import JSON
 
 from fastapi_quanttide_finance.database import Base
 
@@ -14,7 +15,7 @@ class ClassificationResult(Base):
     )
     taxonomy = Column(String(50), nullable=False)
     category = Column(String(255), nullable=False)
-    tags = Column(String, nullable=True)
+    tags = Column(JSON, nullable=True)
     classifier_kind = Column(String(50), nullable=False)
     confidence = Column(Float, nullable=True)
     model_version = Column(String(50), nullable=True)
