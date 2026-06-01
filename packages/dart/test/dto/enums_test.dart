@@ -30,7 +30,8 @@ void main() {
         expect(
           json['source_type'],
           equals(entry.key),
-          reason: 'SourceType.${entry.value.name} @JsonValue must match doc/entities.md',
+          reason:
+              'SourceType.${entry.value.name} @JsonValue must match doc/entities.md',
         );
       });
     }
