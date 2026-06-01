@@ -15,10 +15,7 @@ class QuanttideFinanceApp extends StatelessWidget {
     return MaterialApp(
       title: 'Quanttide Finance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
       home: const DataViewerPage(),
     );
   }
@@ -32,17 +29,12 @@ class DataViewerPage extends StatefulWidget {
 }
 
 class _DataViewerPageState extends State<DataViewerPage> {
-  final _client = FinanceApiClient(
-    'http://localhost:8000',
-  );
+  final _client = FinanceApiClient('http://localhost:8000');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quanttide Finance'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Quanttide Finance'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -148,8 +140,7 @@ class _Section extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             if (records.isEmpty)
               Card(
@@ -169,8 +160,7 @@ class _Section extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: (r as Map<String, String>)
-                          .entries
+                      children: (r as Map<String, String>).entries
                           .map(
                             (e) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2),
@@ -181,16 +171,17 @@ class _Section extends StatelessWidget {
                                     width: 120,
                                     child: Text(
                                       '${e.key}:',
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
                                       e.value,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
                                     ),
                                   ),
                                 ],

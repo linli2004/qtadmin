@@ -6,17 +6,20 @@ part 'source_record.freezed.dart';
 part 'source_record.g.dart';
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class SourceRecordDto with _$SourceRecordDto {
   const factory SourceRecordDto({
     required int id,
-    @JsonKey(unknownEnumValue: SourceType.unknown) required SourceType sourceType,
-    @Default('') String rawText,
-    DateTime? occurredAt,
-    @JsonKey(unknownEnumValue: IngestionStatus.unknown)
+    @JsonKey(name: 'source_type', unknownEnumValue: SourceType.unknown)
+    required SourceType sourceType,
+    @JsonKey(name: 'raw_text') @Default('') String rawText,
+    @JsonKey(name: 'occurred_at') DateTime? occurredAt,
+    @JsonKey(
+      name: 'ingestion_status',
+      unknownEnumValue: IngestionStatus.unknown,
+    )
     @Default(IngestionStatus.pending)
     IngestionStatus ingestionStatus,
-    required DateTime createdAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
   }) = _SourceRecordDto;
 
   factory SourceRecordDto.fromJson(Map<String, dynamic> json) =>

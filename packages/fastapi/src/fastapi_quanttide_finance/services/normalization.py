@@ -17,12 +17,10 @@ class NormalizeResult:
 
 class Normalizer(ABC):
     @abstractmethod
-    def can_handle(self, source_type: str) -> bool:
-        ...
+    def can_handle(self, source_type: str) -> bool: ...
 
     @abstractmethod
-    def normalize(self, input: NormalizeInput) -> NormalizeResult:
-        ...
+    def normalize(self, input: NormalizeInput) -> NormalizeResult: ...
 
 
 _normalizers: list[Normalizer] = []

@@ -26,13 +26,17 @@ router = APIRouter()
 # Register built-in normalizers on module load
 try:
     from fastapi_quanttide_finance.services.normalization import register_normalizer
+
     register_normalizer(CsvRowNormalizer())
     register_normalizer(ManualNormalizer())
 except RuntimeError:
     pass
 
 
-@router.post("/source-records/{record_id}/normalize", response_model=list[NormalizedRecordResponse])
+@router.post(
+    "/source-records/{record_id}/normalize",
+    response_model=list[NormalizedRecordResponse],
+)
 def normalize_source_record(record_id: int, db: Session = Depends(get_db)):
     source = db.get(SourceRecord, record_id)
     if source is None:
@@ -73,7 +77,13 @@ def normalize_source_record(record_id: int, db: Session = Depends(get_db)):
 
 @router.get("/source-records", response_model=list[SourceRecordResponse])
 def list_source_records(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return db.query(SourceRecord).order_by(SourceRecord.created_at.desc()).offset(skip).limit(limit).all()
+    return (
+        db.query(SourceRecord)
+        .order_by(SourceRecord.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/source-records/{record_id}", response_model=SourceRecordResponse)
@@ -94,7 +104,9 @@ def list_normalized_records(
     qb = db.query(NormalizedRecord)
     if source_record_id is not None:
         qb = qb.filter(NormalizedRecord.primary_source_id == source_record_id)
-    return qb.order_by(NormalizedRecord.created_at.desc()).offset(skip).limit(limit).all()
+    return (
+        qb.order_by(NormalizedRecord.created_at.desc()).offset(skip).limit(limit).all()
+    )
 
 
 @router.get("/normalized-records/{record_id}", response_model=NormalizedRecordResponse)

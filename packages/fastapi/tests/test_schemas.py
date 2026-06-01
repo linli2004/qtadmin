@@ -10,6 +10,7 @@ from fastapi_quanttide_finance.schemas.normalized_record import (
 from fastapi_quanttide_finance.schemas.record_link import RecordLinkCreate
 from fastapi_quanttide_finance.schemas.classification_result import (
     ClassificationResultCreate,
+    ClassificationResultUpdate,
 )
 
 
@@ -35,9 +36,7 @@ class TestSourceRecordSchema:
 
     def test_invalid_ingestion_status(self):
         with pytest.raises(ValidationError):
-            SourceRecordCreate(
-                source_type="csv_row", ingestion_status="invalid_status"
-            )
+            SourceRecordCreate(source_type="csv_row", ingestion_status="invalid_status")
 
     def test_raw_text_overflow_rejected(self):
         with pytest.raises(ValidationError) as excinfo:
@@ -172,5 +171,121 @@ class TestClassificationResultSchema:
                 taxonomy="expense_type",
                 category="办公用品",
                 classifier_kind="manual",
+                review_status="invalid",
+            )
+
+
+class TestClassificationCreateRequestSchema:
+    def test_valid_minimal(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationCreateRequest,
+        )
+
+        data = ClassificationCreateRequest(
+            category="办公用品",
+            classifier_kind="manual",
+        )
+        assert data.taxonomy == "expense_type"
+        assert data.category == "办公用品"
+
+    def test_valid_full(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationCreateRequest,
+        )
+
+        data = ClassificationCreateRequest(
+            taxonomy="expense_type",
+            category="采购",
+            tags={"project": "A001"},
+            classifier_kind="ai",
+            confidence=0.95,
+            model_version="v1.0",
+        )
+        assert data.taxonomy == "expense_type"
+        assert data.confidence == 0.95
+
+    def test_invalid_taxonomy(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationCreateRequest,
+        )
+
+        with pytest.raises(ValidationError):
+            ClassificationCreateRequest(
+                taxonomy="business_tag",
+                category="采购",
+                classifier_kind="manual",
+            )
+
+    def test_invalid_classifier_kind(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationCreateRequest,
+        )
+
+        with pytest.raises(ValidationError):
+            ClassificationCreateRequest(
+                category="办公用品",
+                classifier_kind="invalid",
+            )
+
+    def test_extra_fields_rejected(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationCreateRequest,
+        )
+
+        with pytest.raises(ValidationError):
+            ClassificationCreateRequest(
+                category="办公用品",
+                classifier_kind="manual",
+                normalized_record_id=1,
+            )
+
+
+class TestClassificationReviewSchema:
+    def test_valid_review_status_accepted(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationReviewSchema,
+        )
+
+        data = ClassificationReviewSchema(review_status="accepted")
+        assert data.review_status == "accepted"
+
+    def test_valid_review_status_rejected(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationReviewSchema,
+        )
+
+        data = ClassificationReviewSchema(review_status="rejected")
+        assert data.review_status == "rejected"
+
+    def test_invalid_review_status(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationReviewSchema,
+        )
+
+        with pytest.raises(ValidationError):
+            ClassificationReviewSchema(review_status="invalid")
+
+    def test_empty_body_allowed(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationReviewSchema,
+        )
+
+        data = ClassificationReviewSchema()
+        assert data.review_status is None
+        assert data.is_active is None
+
+    def test_extra_fields_rejected(self):
+        from fastapi_quanttide_finance.schemas.classification_result import (
+            ClassificationReviewSchema,
+        )
+
+        with pytest.raises(ValidationError):
+            ClassificationReviewSchema(category="办公用品")
+
+
+class TestClassificationResultUpdateSchema:
+    def test_update_invalid_review_status(self):
+        with pytest.raises(ValidationError):
+            ClassificationResultUpdate(
                 review_status="invalid",
             )

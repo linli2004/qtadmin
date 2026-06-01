@@ -19,8 +19,14 @@ class SourceRecordCreate(PydanticBase):
     @classmethod
     def validate_source_type(cls, v: str) -> str:
         allowed = {
-            "image", "chat", "form", "csv_row",
-            "bank_tx", "api", "manual", "other",
+            "image",
+            "chat",
+            "form",
+            "csv_row",
+            "bank_tx",
+            "api",
+            "manual",
+            "other",
         }
         if v not in allowed:
             raise ValueError(
@@ -43,8 +49,7 @@ class SourceRecordCreate(PydanticBase):
     def validate_raw_text_length(cls, v: str) -> str:
         if len(v) > 65535:
             raise ValueError(
-                f"raw_text exceeds maximum length of 65535 characters "
-                f"(got {len(v)})"
+                f"raw_text exceeds maximum length of 65535 characters (got {len(v)})"
             )
         return v
 

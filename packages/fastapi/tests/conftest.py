@@ -23,6 +23,7 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
+
 TEST_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TEST_DB_PATH = TEST_DATA_DIR / "test.db"
 ALEMBIC_CFG = Path(__file__).resolve().parent.parent / "alembic.ini"
@@ -75,7 +76,9 @@ def client(alembic_config) -> Generator[TestClient, None, None]:
     alembic_config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
     upgrade(alembic_config, "head")
 
-    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        f"sqlite:///{db_path}", connect_args={"check_same_thread": False}
+    )
     TestSessionLocal = sessionmaker(bind=engine)
 
     def override_get_db():

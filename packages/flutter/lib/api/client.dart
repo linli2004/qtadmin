@@ -15,7 +15,7 @@ class ApiException implements Exception {
 
 class FinanceApiClient {
   FinanceApiClient(this.baseUrl, {http.Client? httpClient})
-      : _http = httpClient ?? http.Client();
+    : _http = httpClient ?? http.Client();
 
   final String baseUrl;
   final http.Client _http;
@@ -25,10 +25,7 @@ class FinanceApiClient {
     int limit = 20,
   }) async {
     final uri = Uri.parse('$baseUrl/source-records').replace(
-      queryParameters: {
-        'skip': skip.toString(),
-        'limit': limit.toString(),
-      },
+      queryParameters: {'skip': skip.toString(), 'limit': limit.toString()},
     );
 
     final response = await _http.get(uri);
@@ -41,8 +38,7 @@ class FinanceApiClient {
 
     final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
     return data
-        .map((e) =>
-            SourceRecordDto.fromJson(e as Map<String, dynamic>))
+        .map((e) => SourceRecordDto.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -73,9 +69,9 @@ class FinanceApiClient {
       params['source_record_id'] = sourceRecordId.toString();
     }
 
-    final uri =
-        Uri.parse('$baseUrl/normalized-records')
-            .replace(queryParameters: params);
+    final uri = Uri.parse(
+      '$baseUrl/normalized-records',
+    ).replace(queryParameters: params);
 
     final response = await _http.get(uri);
     if (response.statusCode != 200) {
@@ -87,8 +83,7 @@ class FinanceApiClient {
 
     final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
     return data
-        .map((e) =>
-            NormalizedRecordDto.fromJson(e as Map<String, dynamic>))
+        .map((e) => NormalizedRecordDto.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

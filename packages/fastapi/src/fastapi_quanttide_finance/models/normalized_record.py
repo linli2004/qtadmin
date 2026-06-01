@@ -9,9 +9,7 @@ class NormalizedRecord(Base):
     __tablename__ = "normalized_record"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    primary_source_id = Column(
-        Integer, ForeignKey("source_record.id"), nullable=True
-    )
+    primary_source_id = Column(Integer, ForeignKey("source_record.id"), nullable=True)
     record_type = Column(String(50), nullable=False)
     business_date = Column(Date, nullable=False)
     amount_cents = Column(Integer, nullable=False, default=0)

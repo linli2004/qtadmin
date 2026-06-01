@@ -33,9 +33,7 @@ class NormalizedRecordCreate(PydanticBase):
     def validate_direction(cls, v: str) -> str:
         allowed = {"outflow", "inflow"}
         if v not in allowed:
-            raise ValueError(
-                f"direction must be one of: {', '.join(sorted(allowed))}"
-            )
+            raise ValueError(f"direction must be one of: {', '.join(sorted(allowed))}")
         return v
 
     @field_validator("normalization_status")
@@ -44,8 +42,7 @@ class NormalizedRecordCreate(PydanticBase):
         allowed = {"draft", "normalized", "reviewed", "merged"}
         if v not in allowed:
             raise ValueError(
-                f"normalization_status must be one of: "
-                f"{', '.join(sorted(allowed))}"
+                f"normalization_status must be one of: {', '.join(sorted(allowed))}"
             )
         return v
 

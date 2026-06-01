@@ -1,5 +1,5 @@
 name: quanttide_finance
-description: 量潮金融领域模型 — 凭证层模型 + API DTO（SourceRecordDto、NormalizedRecordDto）
+description: 量潮金融领域模型 — 核心实体（Journal、JournalEntry）
 version: 0.2.0
 homepage: https://github.com/quanttide/quanttide-finance-toolkit
 repository: https://github.com/quanttide/quanttide-finance-toolkit

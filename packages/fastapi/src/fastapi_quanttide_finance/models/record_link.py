@@ -9,9 +9,7 @@ class RecordLink(Base):
     __tablename__ = "record_link"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    source_record_id = Column(
-        Integer, ForeignKey("source_record.id"), nullable=False
-    )
+    source_record_id = Column(Integer, ForeignKey("source_record.id"), nullable=False)
     normalized_record_id = Column(
         Integer, ForeignKey("normalized_record.id"), nullable=False
     )

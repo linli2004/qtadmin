@@ -29,7 +29,7 @@
 | `direction` | NormalizedRecord | `outflow` / `inflow` |
 | `normalization_status` | NormalizedRecord | `draft` / `normalized` / `reviewed` / `merged` |
 | `relation_type` | RecordLink | `primary` / `supplementary` / `split` / `merged` |
-| `taxonomy` | ClassificationResult | `expense_type` / `business_tag` |
+| `taxonomy` | ClassificationResult | `expense_type` |
 | `classifier_kind` | ClassificationResult | `ai` / `rule` / `manual` |
 | `review_status` | ClassificationResult | `candidate` / `accepted` / `rejected` |
 | `line_type` | JournalEntryLine | `debit` / `credit` |

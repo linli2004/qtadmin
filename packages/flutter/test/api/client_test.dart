@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:quanttide_finance/quanttide_finance.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import 'client_test.mocks.dart';
 
@@ -48,9 +48,9 @@ void main() {
     });
 
     test('passes skip and limit query parameters', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response(jsonEncode([]), 200),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response(jsonEncode([]), 200));
 
       await client.listSourceRecords(skip: 10, limit: 5);
 
@@ -61,20 +61,17 @@ void main() {
     });
 
     test('throws ApiException on non-200', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response('Not Found', 404),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response('Not Found', 404));
 
-      expect(
-        () => client.listSourceRecords(),
-        throwsA(isA<ApiException>()),
-      );
+      expect(() => client.listSourceRecords(), throwsA(isA<ApiException>()));
     });
 
     test('returns empty list when no records exist', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response(jsonEncode([]), 200),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response(jsonEncode([]), 200));
 
       final records = await client.listSourceRecords();
       expect(records, isEmpty);
@@ -105,14 +102,11 @@ void main() {
     });
 
     test('throws ApiException on 404', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response('Not Found', 404),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response('Not Found', 404));
 
-      expect(
-        () => client.getSourceRecord(999),
-        throwsA(isA<ApiException>()),
-      );
+      expect(() => client.getSourceRecord(999), throwsA(isA<ApiException>()));
     });
   });
 
@@ -146,9 +140,9 @@ void main() {
     });
 
     test('includes source_record_id query param when provided', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response(jsonEncode([]), 200),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response(jsonEncode([]), 200));
 
       await client.listNormalizedRecords(sourceRecordId: 7);
 
@@ -158,9 +152,9 @@ void main() {
     });
 
     test('throws ApiException on non-200', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response('Server Error', 500),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response('Server Error', 500));
 
       expect(
         () => client.listNormalizedRecords(),
@@ -200,9 +194,9 @@ void main() {
     });
 
     test('throws ApiException on 404', () async {
-      when(mockHttp.get(any)).thenAnswer(
-        (_) async => http.Response('Not Found', 404),
-      );
+      when(
+        mockHttp.get(any),
+      ).thenAnswer((_) async => http.Response('Not Found', 404));
 
       expect(
         () => client.getNormalizedRecord(999),

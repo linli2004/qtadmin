@@ -1,4 +1,5 @@
 """Tests for CsvRowNormalizer + ManualNormalizer (M2)."""
+
 import pytest
 
 from fastapi_quanttide_finance.services.normalization import (
@@ -32,6 +33,7 @@ class TestCsvRowNormalizer:
         assert len(result.normalized_records) == 1
         record = result.normalized_records[0]
         from datetime import date
+
         assert record["business_date"] == date(2026, 6, 1)
         assert record["description"] == "办公用品采购"
         assert record["amount_cents"] == 120000
@@ -70,7 +72,9 @@ class TestCsvRowNormalizer:
             assert link["relation_type"] == "primary"
 
     def test_uses_defaults_for_missing_fields(self):
-        csv_text = "date,description,amount_cents,direction\n2026-06-01,test,500,outflow"
+        csv_text = (
+            "date,description,amount_cents,direction\n2026-06-01,test,500,outflow"
+        )
         result = self.normalizer.normalize(
             NormalizeInput(source_record_id=1, raw_text=csv_text, source_type="csv_row")
         )

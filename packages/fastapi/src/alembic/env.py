@@ -23,6 +23,7 @@ from fastapi_quanttide_finance.models import (  # noqa: F401 — ensure models a
     record_link,
     classification_result,
 )
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -69,9 +70,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
