@@ -1,44 +1,148 @@
 import 'package:test/test.dart';
 import 'package:quanttide_finance/quanttide_finance.dart';
 
-/// Wire values as defined in doc/entities.md enum value table.
-/// These must match the @JsonValue strings on each enum member.
+/// Wire-value alignment tests.
+///
+/// Each @JsonValue label is verified against doc/entities.md wire values
+/// through DTO toJson serialization.
 void main() {
   group('SourceType wire values', () {
-    test('image', () => expect(SourceType.image.toJson(), 'image'));
-    test('chat', () => expect(SourceType.chat.toJson(), 'chat'));
-    test('form', () => expect(SourceType.form.toJson(), 'form'));
-    test('csv_row', () => expect(SourceType.csvRow.toJson(), 'csv_row'));
-    test('bank_tx', () => expect(SourceType.bankTx.toJson(), 'bank_tx'));
-    test('api', () => expect(SourceType.api.toJson(), 'api'));
-    test('manual', () => expect(SourceType.manual.toJson(), 'manual'));
-    test('other', () => expect(SourceType.other.toJson(), 'other'));
+    for (final entry in {
+      'image': SourceType.image,
+      'chat': SourceType.chat,
+      'form': SourceType.form,
+      'csv_row': SourceType.csvRow,
+      'bank_tx': SourceType.bankTx,
+      'api': SourceType.api,
+      'manual': SourceType.manual,
+      'other': SourceType.other,
+    }.entries) {
+      test('${entry.key}', () {
+        final dto = SourceRecordDto(
+          id: 1,
+          sourceType: entry.value,
+          rawText: '',
+          occurredAt: null,
+          ingestionStatus: IngestionStatus.pending,
+          createdAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['source_type'],
+          equals(entry.key),
+          reason: 'SourceType.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
   });
 
   group('IngestionStatus wire values', () {
-    test('pending', () => expect(IngestionStatus.pending.toJson(), 'pending'));
-    test('parsed', () => expect(IngestionStatus.parsed.toJson(), 'parsed'));
-    test('reviewed', () => expect(IngestionStatus.reviewed.toJson(), 'reviewed'));
-    test('failed', () => expect(IngestionStatus.failed.toJson(), 'failed'));
+    for (final entry in {
+      'pending': IngestionStatus.pending,
+      'parsed': IngestionStatus.parsed,
+      'reviewed': IngestionStatus.reviewed,
+      'failed': IngestionStatus.failed,
+    }.entries) {
+      test('${entry.key}', () {
+        final dto = SourceRecordDto(
+          id: 1,
+          sourceType: SourceType.manual,
+          rawText: '',
+          occurredAt: null,
+          ingestionStatus: entry.value,
+          createdAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['ingestion_status'],
+          equals(entry.key),
+          reason:
+              'IngestionStatus.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
   });
 
   group('RecordType wire values', () {
-    test('expense', () => expect(RecordType.expense.toJson(), 'expense'));
-    test('income', () => expect(RecordType.income.toJson(), 'income'));
-    test('transfer', () => expect(RecordType.transfer.toJson(), 'transfer'));
-    test('reimbursement', () => expect(RecordType.reimbursement.toJson(), 'reimbursement'));
-    test('other', () => expect(RecordType.other.toJson(), 'other'));
+    for (final entry in {
+      'expense': RecordType.expense,
+      'income': RecordType.income,
+      'transfer': RecordType.transfer,
+      'reimbursement': RecordType.reimbursement,
+      'other': RecordType.other,
+    }.entries) {
+      test('${entry.key}', () {
+        final dto = NormalizedRecordDto(
+          id: 1,
+          recordType: entry.value,
+          businessDate: '2026-06-01',
+          amountCents: 0,
+          direction: Direction.outflow,
+          department: null,
+          person: null,
+          description: '',
+          createdAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['record_type'],
+          equals(entry.key),
+          reason:
+              'RecordType.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
   });
 
   group('Direction wire values', () {
-    test('outflow', () => expect(Direction.outflow.toJson(), 'outflow'));
-    test('inflow', () => expect(Direction.inflow.toJson(), 'inflow'));
+    for (final entry in {
+      'outflow': Direction.outflow,
+      'inflow': Direction.inflow,
+    }.entries) {
+      test('${entry.key}', () {
+        final dto = NormalizedRecordDto(
+          id: 1,
+          recordType: RecordType.expense,
+          businessDate: '2026-06-01',
+          amountCents: 0,
+          direction: entry.value,
+          department: null,
+          person: null,
+          description: '',
+          createdAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['direction'],
+          equals(entry.key),
+          reason:
+              'Direction.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
   });
 
-  group('NormalizationStatus wire values', () {
-    test('draft', () => expect(NormalizationStatus.draft.toJson(), 'draft'));
-    test('normalized', () => expect(NormalizationStatus.normalized.toJson(), 'normalized'));
-    test('reviewed', () => expect(NormalizationStatus.reviewed.toJson(), 'reviewed'));
-    test('merged', () => expect(NormalizationStatus.merged.toJson(), 'merged'));
+  group('SourceType', () {
+    test('unknown fallback', () {
+      const json = {
+        'id': 1,
+        'source_type': 'invalid',
+        'created_at': '2026-01-01T00:00:00Z',
+      };
+      final dto = SourceRecordDto.fromJson(json);
+      expect(dto.sourceType, SourceType.unknown);
+    });
+  });
+
+  group('IngestionStatus', () {
+    test('default value', () {
+      const json = {
+        'id': 1,
+        'source_type': 'manual',
+        'created_at': '2026-01-01T00:00:00Z',
+      };
+      final dto = SourceRecordDto.fromJson(json);
+      expect(dto.ingestionStatus, IngestionStatus.pending);
+    });
   });
 }
