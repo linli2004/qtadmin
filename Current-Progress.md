@@ -32,9 +32,27 @@
 | `fastapi-check.yml` CI 流水线 | ⬜ backlog | M3 路由已就绪后加，此时 CI 才有校验价值 |
 | Docker Compose | ⬜ backlog | 当前仅 SQLite，compose 贡献为零 |
 
+## M4 — 统计查询 API ✅ 已完成
+
+4 个端点 + 11 个过滤参数 + 分类集成（`classified_count` + 可选 `taxonomy/category` EXIST 过滤）
+
+| 端点 | 功能 |
+|:-----|:------|
+| `GET /statistics/summary` | 全局汇总（record_count, amount_cents, classified_count） |
+| `GET /statistics/breakdown` | 按 dimension 分组统计（含 null 分组） |
+| `GET /statistics/trend` | 按 day/week/month 时间趋势 |
+| `GET /statistics/drilldown` | 明细穿透查询（skip/limit 分页，复用 NormalizedRecordResponse） |
+
+**新增文件**：`schemas/statistics.py`（更新）、`routers/statistics.py`、`services/statistics.py`、`tests/test_statistics.py`
+**修改文件**：`app.py`（注册 router）
+**验证**：36 新增测试，总计 121 通过，覆盖率 91%
+
 ## 下一步
 
-**M4：统计查询 API**
+**M5：脱敏 + 审计日志 + 分类体系校验**
 
-- Aggregate/group/trend/drill-down 统计查询
-- `NormalizedRecord` 维度 + `ClassificationResult` 分类的联合聚合
+| 模块 | 内容 |
+|:-----|:------|
+| 脱敏 | 数据 egress 时替换敏感字段（金额、身份证号等）为占位符 |
+| 审计日志 | 记录所有写操作的操作人、时间、变更内容 |
+| 分类体系校验 | `taxonomy` 的全局注册表 + 分类有效性校验 |

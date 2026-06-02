@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi_quanttide_finance.routers import classifications, source_records
+from fastapi_quanttide_finance.routers import classifications, source_records, statistics
 
 app = FastAPI(title="QuantTide Finance Toolkit")
 
@@ -20,3 +20,4 @@ def health():
 
 app.include_router(source_records.router)
 app.include_router(classifications.router)
+app.include_router(statistics.router)
