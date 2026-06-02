@@ -217,4 +217,209 @@ void main() {
       expect(ex.toString(), contains('network error'));
     });
   });
+
+  group('createSourceRecord', () {
+    test('returns SourceRecordDto on 201', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body'))).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode({
+            'id': 1,
+            'source_type': 'manual',
+            'raw_text': 'test record',
+            'ingestion_status': 'pending',
+            'created_at': '2026-06-01T00:00:00Z',
+          }),
+          201,
+        ),
+      );
+
+      final record = await client.createSourceRecord(
+        sourceType: 'manual',
+        rawText: 'test record',
+      );
+
+      expect(record.id, 1);
+      expect(record.sourceType, SourceType.manual);
+      expect(record.rawText, 'test record');
+
+      final captured = verify(mockHttp.post(captureAny, headers: anyNamed('headers'), body: anyNamed('body'))).captured.first as Uri;
+      expect(captured.path, '/source-records');
+    });
+
+    test('throws ApiException on non-201', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response('Bad Request', 400));
+
+      expect(
+        () => client.createSourceRecord(sourceType: 'manual', rawText: ''),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
+
+  group('normalizeSourceRecord', () {
+    test('returns list of NormalizedRecordDto on 200', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response(
+                jsonEncode([
+                  {
+                    'id': 1,
+                    'record_type': 'expense',
+                    'business_date': '2026-06-01',
+                    'amount_cents': 5000,
+                    'direction': 'outflow',
+                    'description': 'test expense',
+                    'created_at': '2026-06-01T00:00:00Z',
+                  },
+                ]),
+                200,
+              ));
+
+      final records = await client.normalizeSourceRecord(1);
+      expect(records, hasLength(1));
+      expect(records.first.recordType, RecordType.expense);
+
+      final captured = verify(mockHttp.post(captureAny, headers: anyNamed('headers'), body: anyNamed('body'))).captured.first as Uri;
+      expect(captured.path, '/source-records/1/normalize');
+    });
+
+    test('throws ApiException on 404', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response('Not Found', 404));
+
+      expect(
+        () => client.normalizeSourceRecord(999),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
+
+  group('createClassification', () {
+    test('returns ClassificationResultDto on 201', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response(
+                jsonEncode({
+                  'id': 1,
+                  'normalized_record_id': 42,
+                  'taxonomy': 'expense_type',
+                  'category': 'office_supplies',
+                  'classifier_kind': 'manual',
+                  'review_status': 'candidate',
+                  'is_active': true,
+                  'created_at': '2026-06-01T00:00:00Z',
+                  'updated_at': '2026-06-01T00:00:00Z',
+                }),
+                201,
+              ));
+
+      final result = await client.createClassification(
+        42,
+        category: 'office_supplies',
+        classifierKind: 'manual',
+      );
+
+      expect(result.id, 1);
+      expect(result.normalizedRecordId, 42);
+      expect(result.category, 'office_supplies');
+      expect(result.classifierKind, ClassifierKind.manual);
+      expect(result.reviewStatus, ReviewStatus.candidate);
+
+      final captured = verify(mockHttp.post(captureAny, headers: anyNamed('headers'), body: anyNamed('body'))).captured.first as Uri;
+      expect(captured.path, '/normalized-records/42/classifications');
+    });
+
+    test('throws ApiException on 400', () async {
+      when(mockHttp.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response('Bad Request', 400));
+
+      expect(
+        () => client.createClassification(1, category: '', classifierKind: 'manual'),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
+
+  group('listClassifications', () {
+    test('returns list of ClassificationResultDto on 200', () async {
+      when(mockHttp.get(any)).thenAnswer((_) async => http.Response(
+            jsonEncode([
+              {
+                'id': 1,
+                'normalized_record_id': 42,
+                'taxonomy': 'expense_type',
+                'category': 'office_supplies',
+                'classifier_kind': 'ai',
+                'review_status': 'candidate',
+                'is_active': true,
+                'created_at': '2026-06-01T00:00:00Z',
+                'updated_at': '2026-06-01T00:00:00Z',
+              },
+            ]),
+            200,
+          ));
+
+      final results = await client.listClassifications(42);
+      expect(results, hasLength(1));
+      expect(results.first.category, 'office_supplies');
+
+      final captured = verify(mockHttp.get(captureAny)).captured.first as Uri;
+      expect(captured.path, '/normalized-records/42/classifications');
+    });
+
+    test('passes review_status query param when provided', () async {
+      when(mockHttp.get(any))
+          .thenAnswer((_) async => http.Response(jsonEncode([]), 200));
+
+      await client.listClassifications(42, reviewStatus: 'accepted');
+
+      final captured = verify(mockHttp.get(captureAny)).captured.first as Uri;
+      expect(captured.queryParameters['review_status'], 'accepted');
+    });
+
+    test('throws ApiException on non-200', () async {
+      when(mockHttp.get(any))
+          .thenAnswer((_) async => http.Response('Not Found', 404));
+
+      expect(
+        () => client.listClassifications(999),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
+
+  group('reviewClassification', () {
+    test('updates review_status on 200', () async {
+      when(mockHttp.patch(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response(
+                jsonEncode({
+                  'id': 1,
+                  'normalized_record_id': 42,
+                  'taxonomy': 'expense_type',
+                  'category': 'office_supplies',
+                  'classifier_kind': 'ai',
+                  'review_status': 'accepted',
+                  'is_active': true,
+                  'created_at': '2026-06-01T00:00:00Z',
+                  'updated_at': '2026-06-01T00:30:00Z',
+                }),
+                200,
+              ));
+
+      final result = await client.reviewClassification(1, reviewStatus: 'accepted');
+      expect(result.reviewStatus, ReviewStatus.accepted);
+
+      final captured = verify(mockHttp.patch(captureAny, headers: anyNamed('headers'), body: anyNamed('body'))).captured.first as Uri;
+      expect(captured.path, '/classifications/1');
+    });
+
+    test('throws ApiException on 404', () async {
+      when(mockHttp.patch(any, headers: anyNamed('headers'), body: anyNamed('body')))
+          .thenAnswer((_) async => http.Response('Not Found', 404));
+
+      expect(
+        () => client.reviewClassification(999, reviewStatus: 'accepted'),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
 }

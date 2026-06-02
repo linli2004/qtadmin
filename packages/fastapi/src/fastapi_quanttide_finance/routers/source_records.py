@@ -10,7 +10,9 @@ from fastapi_quanttide_finance.schemas.source_record import (
     SourceRecordResponse,
 )
 from fastapi_quanttide_finance.schemas.normalized_record import (
+    NormalizedRecordCreate,
     NormalizedRecordResponse,
+    NormalizedRecordUpdate,
 )
 from fastapi_quanttide_finance.services.normalization import (
     NormalizeInput,
@@ -69,6 +71,9 @@ def normalize_source_record(record_id: int, db: Session = Depends(get_db)):
         )
         db.add(link)
 
+    # 标准化成功后更新原始记录状态
+    source.ingestion_status = "normalized"
+
     db.commit()
     for nr in created_records:
         db.refresh(nr)
@@ -124,3 +129,24 @@ def create_source_record(data: SourceRecordCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(record)
     return record
+
+
+@router.post("/normalized-records", response_model=NormalizedRecordResponse, status_code=201)
+def create_normalized_record(data: NormalizedRecordCreate, db: Session = Depends(get_db)):
+    nr = NormalizedRecord(**data.model_dump())
+    db.add(nr)
+    db.commit()
+    db.refresh(nr)
+    return nr
+
+
+@router.patch("/normalized-records/{record_id}", response_model=NormalizedRecordResponse)
+def update_normalized_record(record_id: int, data: NormalizedRecordUpdate, db: Session = Depends(get_db)):
+    nr = db.get(NormalizedRecord, record_id)
+    if nr is None:
+        raise HTTPException(status_code=404, detail="NormalizedRecord not found")
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(nr, field, value)
+    db.commit()
+    db.refresh(nr)
+    return nr

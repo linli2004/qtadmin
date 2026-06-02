@@ -198,15 +198,14 @@ def get_drilldown(
         qb = qb.filter(NormalizedRecord.currency == filters.currency)
     if filters.taxonomy is not None and filters.category is not None:
         exists_clause = (
-            exists(
-                ClassificationResult.normalized_record_id
-                == NormalizedRecord.id,
+            exists()
+            .where(
+                ClassificationResult.normalized_record_id == NormalizedRecord.id,
                 ClassificationResult.is_active == True,
                 ClassificationResult.review_status == "accepted",
                 ClassificationResult.taxonomy == filters.taxonomy,
                 ClassificationResult.category == filters.category,
             )
-            .where(ClassificationResult.normalized_record_id == NormalizedRecord.id)
         )
         qb = qb.filter(exists_clause)
 

@@ -78,3 +78,27 @@ enum NormalizationStatus {
   @JsonValue('__unknown__')
   unknown,
 }
+
+@JsonEnum()
+enum ClassifierKind {
+  @JsonValue('ai')
+  ai,
+  @JsonValue('rule')
+  rule,
+  @JsonValue('manual')
+  manual,
+  @JsonValue('__unknown__')
+  unknown,
+}
+
+@JsonEnum()
+enum ReviewStatus {
+  @JsonValue('candidate')
+  candidate,
+  @JsonValue('accepted')
+  accepted,
+  @JsonValue('rejected')
+  rejected,
+  @JsonValue('__unknown__')
+  unknown,
+}

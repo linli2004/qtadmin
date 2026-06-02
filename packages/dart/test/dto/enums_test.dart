@@ -146,4 +146,62 @@ void main() {
       expect(dto.ingestionStatus, IngestionStatus.pending);
     });
   });
+
+  group('ClassifierKind wire values', () {
+    for (final entry in {
+      'ai': ClassifierKind.ai,
+      'rule': ClassifierKind.rule,
+      'manual': ClassifierKind.manual,
+    }.entries) {
+      test(entry.key, () {
+        final dto = ClassificationResultDto(
+          id: 1,
+          normalizedRecordId: 1,
+          taxonomy: 'expense_type',
+          category: 'office_supplies',
+          classifierKind: entry.value,
+          reviewStatus: ReviewStatus.candidate,
+          isActive: true,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['classifier_kind'],
+          equals(entry.key),
+          reason:
+              'ClassifierKind.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
+  });
+
+  group('ReviewStatus wire values', () {
+    for (final entry in {
+      'candidate': ReviewStatus.candidate,
+      'accepted': ReviewStatus.accepted,
+      'rejected': ReviewStatus.rejected,
+    }.entries) {
+      test(entry.key, () {
+        final dto = ClassificationResultDto(
+          id: 1,
+          normalizedRecordId: 1,
+          taxonomy: 'expense_type',
+          category: 'office_supplies',
+          classifierKind: ClassifierKind.manual,
+          reviewStatus: entry.value,
+          isActive: true,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+        final json = dto.toJson();
+        expect(
+          json['review_status'],
+          equals(entry.key),
+          reason:
+              'ReviewStatus.${entry.value.name} @JsonValue must match doc/entities.md',
+        );
+      });
+    }
+  });
 }

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+htmlcov/
+.venv/
+
+# SQLite runtime data (keep schema in migrations)
+*.db
+
+# Flutter / Dart build
+build/
+.dart_tool/
+.pub/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal
+.claude/
+summary*
+client.md
+usage.md
+packages/data/
