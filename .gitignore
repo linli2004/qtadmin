@@ -36,6 +36,17 @@ data/
 .DS_Store
 Thumbs.db
 
+# Database & backup
+*.db
+*.bak
+
+# Flutter
+.gradle/
+*.iml
+.metadata
+src/studio/build/
+src/studio/.dart_tool/
+
 # Terraform
 .terraform/
 terraform/terraform.tfstate

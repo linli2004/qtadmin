@@ -7,6 +7,7 @@ from importlib.metadata import version
 
 from app.asset import backup as asset_backup
 from app.asset import audit as asset_audit
+from app.human import cli as human_cli
 
 
 app = typer.Typer(no_args_is_help=True, invoke_without_command=True)
@@ -16,6 +17,7 @@ asset_app.command()(asset_backup.backup)
 asset_app.command()(asset_audit.audit)
 
 app.add_typer(asset_app, name="asset")
+app.add_typer(human_cli.app, name="human")
 
 
 @app.callback(invoke_without_command=True)
