@@ -4,6 +4,7 @@ from app.human.models.recruitment import Recruitment
 from app.human.models.candidate import Candidate
 from app.human.models.application import Application
 from app.human.models.pending_queue import PendingQueueItem
+from app.human.models.processed_mail import ProcessedMail
 
 __all__ = [
     "Talent", "TalentStatus",
@@ -11,4 +12,5 @@ __all__ = [
     "Candidate",
     "Application",
     "PendingQueueItem",
+    "ProcessedMail",
 ]

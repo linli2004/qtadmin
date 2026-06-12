@@ -24,7 +24,7 @@ class LarkClient:
         return result.stdout
 
     def list_emails(self, limit: int = 20, since: str = "7d") -> list[LarkEmail]:
-        cmd = [self._lark_path, "mail", "list", "--limit", str(limit)]
+        cmd = [self._lark_path, "mail", "list", "--limit", str(limit), "--since", since]
         raw = self._run(cmd)
         return self._parse_list_output(raw)
 

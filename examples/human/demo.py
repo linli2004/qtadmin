@@ -1,3 +1,16 @@
+"""HR Demo — Standalone server with Feishu integration.
+
+整合了 quanttide-hr-toolkit-main 的完整 demo 架构：
+  - 招聘管道 API（所有 routers）
+  - 飞书邮箱轮询（`_poll_mailbox` 后台任务）
+  - 附件下载（lark-cli + httpx）
+  - 种子数据 + 数据库迁移
+  - 静态前端
+
+Usage:
+    cd qtadmin
+    QTADMIN_MAILBOX=xxx@example.com PYTHONPATH=src/provider src/provider/.venv/bin/python examples/human/demo.py
+"""
 import asyncio
 import json
 import os
@@ -7,26 +20,29 @@ from datetime import datetime, timezone
 
 import httpx
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.human.database import SessionLocal, init_db
 from app.human.models.processed_mail import ProcessedMail
+from app.human.models.recruitment import Recruitment
 from app.human.routers import (
     ai_config, applications, candidates, export, ingest, materials, messages,
     pipeline, pool, queue, recruitments,
 )
 
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _DATA_DIR = os.environ.get("QTADMIN_DATA_DIR", os.path.join(_PROJECT_ROOT, "data"))
 _ATTACHMENT_DIR = os.path.join(_DATA_DIR, "attachments")
+_MATERIALS_DIR = os.path.join(_DATA_DIR, "materials")
 
 
 def seed_data_if_empty():
-    """Check if DB is empty and seed demo data if so."""
     db = SessionLocal()
     try:
-        from app.human.models.recruitment import Recruitment
         exists = db.query(Recruitment).first()
         if not exists:
             from app.human.seed import seed_data
@@ -143,7 +159,7 @@ async def _poll_mailbox():
                 }
                 async with httpx.AsyncClient() as client:
                     resp = await client.post(
-                        "http://localhost:8080/ingest",
+                        "http://localhost:8000/ingest",
                         json=payload,
                         timeout=30,
                     )
@@ -158,7 +174,8 @@ _poll_task: asyncio.Task | None = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    os.makedirs(_ATTACHMENT_DIR, exist_ok=True)
+    for d in [_ATTACHMENT_DIR, _MATERIALS_DIR]:
+        os.makedirs(d, exist_ok=True)
     init_db()
     seed_data_if_empty()
     global _poll_task
@@ -168,11 +185,24 @@ async def lifespan(app: FastAPI):
         _poll_task.cancel()
 
 
-app = FastAPI(title="qtadmin API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="HR Demo — 招聘管道看板", version="0.1.0", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def no_cache(request, call_next):
+    response = await call_next(request)
+    if request.url.path in ("/",) or request.url.path.endswith((".html", ".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://127.0.0.1:8080", "http://localhost:8080",
+        "http://127.0.0.1:8081", "http://localhost:8081",
+        "http://127.0.0.1:8000", "http://localhost:8000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -191,10 +221,17 @@ app.include_router(candidates.router)
 app.include_router(applications.router)
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+@app.get("/attachments/{message_id}/{filename:path}")
+def serve_attachment(message_id: str, filename: str):
+    """Serve stored attachment files for browser preview."""
+    file_path = os.path.join(_ATTACHMENT_DIR, message_id, filename)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return FileResponse(file_path, filename=filename)
 
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

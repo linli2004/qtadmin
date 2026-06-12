@@ -20,6 +20,8 @@ class PendingQueueItem(Base):
     suggested_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     confidence: Mapped[str] = mapped_column(String(20), default="low")
     suggested_recruitment_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     attachments_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     hr_status: Mapped[str] = mapped_column(String(20), default="pending")
     hr_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,5 +1,6 @@
 """Human CLI commands — recruitment email classification and ingestion."""
 import json
+import logging
 import sys
 
 import httpx
@@ -64,7 +65,7 @@ def mail_list(
     typer.echo(f" {'#':>3} │ {'发件人':<8} │ {'主题':<40} │ {'建议阶段':<14} │ {'可信度':<6}")
     typer.echo("─────┼──────────┼──────────────────────────────────────────┼────────────────┼────────")
     for i, email in enumerate(emails, 1):
-        status, conf = classify(subject=email.subject, sender_email="")
+        status, conf = classify(subject=email.subject, sender_email=email.sender_email)
         status_str = status or "待确认"
         typer.echo(f" {i:>3} │ {email.sender_name:<8} │ {email.subject:<40} │ {status_str:<14} │ {conf:<6}")
 
@@ -179,3 +180,98 @@ def status(
     typer.echo(f"  待确认: {stats.get('pending', 0)}", err=True)
     typer.echo(f"  已确认: {stats.get('confirmed', 0)}", err=True)
     typer.echo(f"  已忽略: {stats.get('ignored', 0)}", err=True)
+
+
+@app.command(name="send")
+def mail_send(
+    as_json: bool = typer.Option(False, "--json", help="输出 JSON"),
+):
+    """领取并发送发件箱中的待发邮件（单次轮询）。"""
+    cfg = Config()
+    api = ApiClient(base_url=cfg.get("provider_url"))
+    try:
+        from app.human.mail_sender import send_pending
+        sent = send_pending(api)
+    except httpx.ConnectError as e:
+        typer.echo(f"连接服务端失败: {e}", err=True)
+        raise typer.Exit(1)
+
+    if as_json:
+        typer.echo(json.dumps({"sent": sent}, ensure_ascii=False))
+        return
+
+    if sent:
+        typer.echo(f"已发送 {sent} 封邮件。", err=True)
+    else:
+        typer.echo("发件箱中没有待发邮件。", err=True)
+
+
+@app.command(name="send-loop")
+def mail_send_loop(
+    interval: int = typer.Option(30, "-i", "--interval", help="轮询间隔（秒）"),
+):
+    """持续轮询发件箱并发送邮件（守护进程模式）。"""
+    cfg = Config()
+    api = ApiClient(base_url=cfg.get("provider_url"))
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    )
+    try:
+        from app.human.mail_sender import run_loop
+        run_loop(api, interval=interval)
+    except KeyboardInterrupt:
+        typer.echo("\n发件循环已停止。", err=True)
+
+
+@app.command(name="outbox")
+def mail_outbox(
+    status: str = typer.Option(None, "--status", help="筛选状态: pending/sending/sent/failed"),
+    as_json: bool = typer.Option(False, "--json", help="输出 JSON"),
+):
+    """查看发件箱统计。"""
+    cfg = Config()
+    api = ApiClient(base_url=cfg.get("provider_url"))
+    count = api.get_outbox_count(status=status)
+    if as_json:
+        typer.echo(json.dumps({"count": count, "status": status}, ensure_ascii=False))
+        return
+    label = status or "待发/发送中"
+    typer.echo(f"  {label}: {count} 封", err=True)
+
+
+@app.command(name="dead-letters")
+def mail_dead_letters(
+    as_json: bool = typer.Option(False, "--json", help="输出 JSON"),
+):
+    """查看死信队列（发送失败超过最大重试次数）。"""
+    cfg = Config()
+    api = ApiClient(base_url=cfg.get("provider_url"))
+    items = api.list_dead_letters()
+    if as_json:
+        typer.echo(json.dumps(items, ensure_ascii=False))
+        return
+
+    if not items:
+        typer.echo("  没有死信。", err=True)
+        return
+
+    typer.echo(f"  {'#':>3} │ {'收件人':<24} │ {'主题':<40} │ {'失败原因':<20} │ {'重试次数'}")
+    typer.echo("  ─────┼──────────────────────────┼──────────────────────────────────────────┼──────────────────────┼────────────")
+    for i, item in enumerate(items, 1):
+        typer.echo(f"  {i:>3} │ {item['recipient_email'] or '':<24} │ {item['subject'][:38]:<40} │ {(item['failure_reason'] or '')[:18]:<20} │ {item['retry_count']}")
+
+
+@app.command(name="requeue")
+def mail_requeue(
+    message_id: int = typer.Argument(..., help="死信消息 ID"),
+):
+    """将死信重新放入发件队列。"""
+    cfg = Config()
+    api = ApiClient(base_url=cfg.get("provider_url"))
+    try:
+        result = api.requeue_dead_letter(message_id)
+        typer.echo(f"  消息 {result['id']} 已重新入队，状态: {result['send_status']}", err=True)
+    except httpx.HTTPStatusError as e:
+        typer.echo(f"  操作失败 (HTTP {e.response.status_code}): {e.response.text}", err=True)
+        raise typer.Exit(1)

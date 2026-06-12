@@ -1,5 +1,6 @@
-"""Ingest endpoint — receive classified emails from CLI, queue for HR review."""
+"""Ingest endpoint — receive raw emails from CLI, classify server-side, queue for HR review."""
 import json
+import logging
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -7,6 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.human.database import get_db
 from app.human.models.pending_queue import PendingQueueItem
+from app.human.services.classifier import classify
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["human"])
 
@@ -24,6 +28,8 @@ class IngestItem(BaseModel):
     suggested_status: str | None = None
     confidence: str = "low"
     suggested_recruitment_title: str | None = None
+    body: str | None = None
+    body_text: str | None = None
     attachments: list[IngestAttachment] | None = None
 
 
@@ -71,14 +77,25 @@ def ingest_items(body: IngestRequest, db: Session = Depends(get_db)):
         if item.attachments:
             attachments_json = json.dumps([a.model_dump() for a in item.attachments], ensure_ascii=False)
 
+        # Run server-side classification
+        classification = classify(
+            subject=item.subject,
+            body_text=item.body_text,
+            sender_name=item.sender_name,
+            sender_email=item.sender_email,
+            db=db,
+        )
+
         qi = PendingQueueItem(
             source=body.source,
             message_id=item.message_id,
             subject=item.subject,
             sender_name=item.sender_name,
             sender_email=item.sender_email,
-            suggested_status=item.suggested_status,
-            confidence=item.confidence,
+            body=item.body,
+            body_text=item.body_text,
+            suggested_status=classification.suggested_status,
+            confidence=classification.confidence,
             suggested_recruitment_title=item.suggested_recruitment_title,
             attachments_json=attachments_json,
         )

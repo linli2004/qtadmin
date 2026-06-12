@@ -12,7 +12,6 @@ class TalentCreate(BaseModel):
 
 
 class TalentUpdate(BaseModel):
-    email: str | None = None
     real_name: str | None = None
     quality: str | None = None
 

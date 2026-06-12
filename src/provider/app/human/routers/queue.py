@@ -85,6 +85,8 @@ def confirm_queue_item(queue_id: int, body: ConfirmRequest, db: Session = Depend
     item = db.query(PendingQueueItem).filter(PendingQueueItem.id == queue_id).first()
     if not item:
         raise HTTPException(404, "Queue item not found")
+    if item.hr_status != "pending":
+        raise HTTPException(400, f"Queue item is not pending (current: {item.hr_status})")
 
     item.hr_status = body.action
     db.flush()
@@ -95,10 +97,11 @@ def confirm_queue_item(queue_id: int, body: ConfirmRequest, db: Session = Depend
         db.add(recruitment)
         db.flush()
 
-    candidate = db.query(Candidate).filter(Candidate.email == (body.email or item.sender_email)).first()
+    target_email = (body.email or item.sender_email or "").lower()
+    candidate = db.query(Candidate).filter(Candidate.email == target_email).first()
     if not candidate:
         candidate = Candidate(
-            email=body.email or item.sender_email,
+            email=target_email,
             real_name=body.real_name or item.sender_name or "未知",
         )
         db.add(candidate)
@@ -144,9 +147,37 @@ def ignore_queue_item(queue_id: int, body: IgnoreRequest, db: Session = Depends(
     item = db.query(PendingQueueItem).filter(PendingQueueItem.id == queue_id).first()
     if not item:
         raise HTTPException(404, "Queue item not found")
+    if item.hr_status != "pending":
+        raise HTTPException(400, f"Queue item is not pending (current: {item.hr_status})")
     item.hr_status = "ignored"
     db.commit()
     return ConfirmResponse(queue_id=item.id, action="ignored")
+
+
+@router.get("/by-email")
+def get_queue_by_email(email: str, db: Session = Depends(get_db)):
+    qi = (
+        db.query(PendingQueueItem)
+        .filter(PendingQueueItem.sender_email == email)
+        .order_by(PendingQueueItem.created_at.desc())
+        .first()
+    )
+    if not qi:
+        return {"found": False}
+    return {
+        "found": True,
+        "item": {
+            "queue_id": qi.id,
+            "message_id": qi.message_id,
+            "subject": qi.subject,
+            "sender_name": qi.sender_name,
+            "sender_email": qi.sender_email,
+            "suggested_status": qi.suggested_status,
+            "confidence": qi.confidence,
+            "hr_status": qi.hr_status,
+            "hr_notes": qi.hr_notes,
+        },
+    }
 
 
 @router.get("/stats")

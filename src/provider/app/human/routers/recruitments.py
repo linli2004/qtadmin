@@ -88,9 +88,9 @@ def create_talent(recruitment_id: int, data: TalentCreate, db: Session = Depends
     if not recruitment:
         raise HTTPException(404, "Recruitment not found")
 
-    candidate = db.query(Candidate).filter(Candidate.email == data.email).first()
+    candidate = db.query(Candidate).filter(Candidate.email == data.email.lower()).first()
     if not candidate:
-        candidate = Candidate(email=data.email, real_name=data.real_name)
+        candidate = Candidate(email=data.email.lower(), real_name=data.real_name)
         db.add(candidate)
         db.flush()
     app = Application(candidate_id=candidate.id, recruitment_id=recruitment_id, source="manual_debug")
