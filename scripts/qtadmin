@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /home/linli/桌面/qt-hr/qtadmin/src/cli/.venv/bin/qtadmin "$@"

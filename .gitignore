@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+
+# Data
+data/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database & backup
+*.db
+*.bak
+
+# Flutter
+.gradle/
+*.iml
+.metadata
+src/studio/build/
+src/studio/.dart_tool/
+
+# Terraform
+.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
