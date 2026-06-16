@@ -48,7 +48,8 @@ class _PipelineScreenState extends State<PipelineScreen> {
     try {
       final dt = DateTime.parse(updated.replaceAll(' ', 'T'));
       return DateTime.now().difference(dt).inDays;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_waitDays parse error: $e');
       return -1;
     }
   }
@@ -623,7 +624,9 @@ class _DetailPanel extends StatelessWidget {
                     if (parsed is List) {
                       msgAtts = parsed.cast<Map<String, dynamic>>();
                     }
-                  } catch (_) {}
+                  } catch (e) {
+                    debugPrint('attachmentsJson parse error: $e');
+                  }
                 }
                 return Container(
                   width: double.infinity,

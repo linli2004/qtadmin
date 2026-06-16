@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/).
 
+## [0.2.0] - 2026-06-16
+
+### Human
+
+独立发布 `v0.10.0`，详见 [CHANGELOG-human.md](CHANGELOG-human.md)。
+
+- **Flutter 看板应用**: 管道看板、邮件队列、人才池、AI 设置
+- **响应式布局**: NavigationRail 桌面端 / NavigationBar 移动端
+- **管道拖拽流转**: 8 状态列、停留天数着色、搜索过滤
+- **主题系统**: 深色主题、8 种状态色彩、间距/字号 token
+
 ## [0.1.0] - 2026-05-09
 
 ### Studio

@@ -76,12 +76,12 @@ class _QueueScreenState extends State<QueueScreen> {
     );
     if (result == null) return;
     await widget.api.confirmQueueItem(item.queueId, action: action, status: result['status'] ?? '', realName: result['name'] ?? '', email: result['email'] ?? '', recruitmentTitle: result['recruitmentTitle'] ?? '');
-    _load();
+    if (mounted) _load();
   }
 
   Future<void> _ignore(QueueItem item) async {
     await widget.api.ignoreQueueItem(item.queueId);
-    _load();
+    if (mounted) _load();
   }
 
   @override
