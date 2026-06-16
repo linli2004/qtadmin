@@ -166,8 +166,8 @@ def confirm_queue_item(queue_id: int, body: ConfirmRequest, db: Session = Depend
             talent.status = app.status
             talent.sub_stage = app.sub_stage
             talent.stage_results = app.stage_results
-        except (ValueError, KeyError):
-            pass
+        except (ValueError, KeyError) as exc:
+            raise HTTPException(400, f"无效的状态转换: {exc}")
 
     corrections = []
     if body.status and body.status != item.suggested_status:

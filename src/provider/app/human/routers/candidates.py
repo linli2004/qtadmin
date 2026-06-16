@@ -27,7 +27,8 @@ def update_candidate(candidate_id: int, data: CandidateUpdate, db: Session = Dep
         raise HTTPException(404, "Candidate not found")
 
     old_email = c.email
-    for field, val in data.model_dump(exclude_unset=True).items():
+    updates = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    for field, val in updates.items():
         setattr(c, field, val)
     db.flush()
 
