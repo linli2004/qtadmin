@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/).
 
+## [0.2.0] - 2026-06-16
+
+### Added
+
+- **finance 模块** (`packages/finance/`) — 财务记录标准化与分析全链路
+  - **Dart 包** (`packages/finance/dart/`)：DTO 定义（SourceRecord、NormalizedRecord、ClassificationResult）、Journal/JournalEntry 凭证模型、freezed 序列化与 JSON 序列化、46 个单元测试
+  - **FastAPI 后端** (`packages/finance/fastapi/`)：SQLAlchemy ORM 模型、Alembic 迁移、Pydantic 请求/响应 schema、CRUD REST 路由、Normalizer 服务、统计接口（Summary/Breakdown/Trend/Drilldown）、121 个测试
+- `.github/workflows/dart-check.yml`：Dart CI 工作流（push/PR 自动执行 analyze + test）
+- `.github/workflows/dart-publish.yml`：Dart CD 工作流（tag 匹配发布到 pub.dev）
+- `docs/user-guide/finance.md`：finance 用户指南（Studio 操作 + CLI 使用 + 核心概念）
+- `examples/finance/`：finance 演示（seed.py 数据填充 + HTML 看板）
+- `STATUS.md`：项目全局状态文档
+
+### Changed
+
+- `.gitignore`：全面重构——新增 Dart 构建产物（.dart_tool/）、Python 缓存（__pycache__/、*.pyc、.pytest_cache）、数据库文件（*.db）、IDE 配置、Terraform 等忽略规则
+- `docs/myst.yml`：同步更新目录结构
+
+### Docs
+
+- `docs/dev/finance-integration-plan.md`：finance 集成计划（任务分解与依赖关系）
+- `docs/user-guide/asset.md`、`business.md`、`human.md`、`index.md`：用户文档新增及更新
+- `docs/add/hr-email-import.md`：HR 邮件导入方案
+
 ## [0.1.0] - 2026-05-09
 
 ### Studio
